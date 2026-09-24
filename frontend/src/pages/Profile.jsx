@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Settings, User, Shield, Bell, Download, LogOut } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import toast from 'react-hot-toast';
 
 const InstallButton = () => {
   const { isInstallable, installPWA } = usePWAInstall();
