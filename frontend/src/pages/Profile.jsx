@@ -1,4 +1,6 @@
-import { Settings, User, Shield, Bell, Download } from 'lucide-react';
+import { useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { Settings, User, Shield, Bell, Download, LogOut } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 const InstallButton = () => {
@@ -19,6 +21,8 @@ const InstallButton = () => {
 };
 
 const Profile = () => {
+  const { user, logout } = useContext(AuthContext);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
       <header>
@@ -28,18 +32,24 @@ const Profile = () => {
 
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="p-8 border-b border-slate-200 flex flex-col md:flex-row gap-8 items-center md:items-start">
-          <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-3xl">
-            A
+          <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-3xl uppercase">
+            {user?.name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-2xl font-bold text-slate-900">Alex Johnson</h2>
-            <p className="text-slate-500">alex.johnson@example.com</p>
+            <h2 className="text-2xl font-bold text-slate-900 capitalize">{user?.name || 'User'}</h2>
+            <p className="text-slate-500">{user?.email || 'user@example.com'}</p>
             <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-3">
               <button className="px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 transition-colors">
                 Edit Profile
               </button>
               <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
                 Change Avatar
+              </button>
+              <button 
+                onClick={logout}
+                className="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
+              >
+                <LogOut size={16} /> Logout
               </button>
             </div>
           </div>
