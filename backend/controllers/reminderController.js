@@ -299,7 +299,22 @@ const acceptInvitation = async (req, res) => {
     if (reminder) {
       if (!reminder.sharedWith.includes(req.user.id)) {
         reminder.sharedWith.push(req.user.id);
+        
+        if (reminder.type !== 'team') {
+          reminder.type = 'team';
+          await EventMember.findOneAndUpdate(
+            { eventId: reminder._id, userId: reminder.owner },
+            { role: 'owner' },
+            { upsert: true }
+          );
+        }
         await reminder.save();
+
+        await EventMember.findOneAndUpdate(
+          { eventId: reminder._id, userId: req.user.id },
+          { role: 'member' },
+          { upsert: true }
+        );
       }
       
       const populatedReminder = await Reminder.findById(reminder._id)
@@ -683,20 +698,26 @@ const getEventMembers = async (req, res) => {
 
     let members = await EventMember.find({ eventId: id }).populate('userId', 'name email profileImage');
     
-    // Legacy migration: if members are empty but sharedWith exists, create them
-    if (members.length === 0 && reminder.type === 'team') {
+    // Sync sharedWith and owner with EventMember to ensure no one is missed
+    const expectedUserIds = [
+      reminder.owner?._id?.toString(),
+      ...reminder.sharedWith.map(sw => sw._id?.toString())
+    ].filter(Boolean);
+    
+    const existingUserIds = members.map(m => m.userId?._id?.toString());
+    const missingUsers = expectedUserIds.filter(uid => !existingUserIds.includes(uid));
+    
+    if (missingUsers.length > 0 && reminder.type === 'team') {
       const newMembers = [];
-      if (reminder.owner) {
-        newMembers.push({ eventId: id, userId: reminder.owner._id, role: 'owner' });
+      for (const uid of missingUsers) {
+        newMembers.push({ 
+          eventId: id, 
+          userId: uid, 
+          role: uid === reminder.owner?._id?.toString() ? 'owner' : 'member' 
+        });
       }
-      for (const sw of reminder.sharedWith) {
-        newMembers.push({ eventId: id, userId: sw._id, role: 'member' });
-      }
-      
-      if (newMembers.length > 0) {
-        await EventMember.insertMany(newMembers);
-        members = await EventMember.find({ eventId: id }).populate('userId', 'name email profileImage');
-      }
+      await EventMember.insertMany(newMembers);
+      members = await EventMember.find({ eventId: id }).populate('userId', 'name email profileImage');
     }
 
     res.status(200).json(members);
