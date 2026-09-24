@@ -12,7 +12,8 @@ export const SocketProvider = ({ children }) => {
     let newSocket;
     if (user) {
       const token = localStorage.getItem('token');
-      const url = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const rawApiUrl = import.meta.env.VITE_API_URL;
+      const url = rawApiUrl ? rawApiUrl.replace(/\/+$/, '') : 'http://localhost:5000';
       newSocket = io(url, {
         auth: { token }
       });

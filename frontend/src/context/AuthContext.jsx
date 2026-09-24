@@ -10,7 +10,9 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Set Base URL
-    axios.defaults.baseURL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : 'http://localhost:5000/api';
+    const rawApiUrl = import.meta.env.VITE_API_URL;
+    const apiUrl = rawApiUrl ? rawApiUrl.replace(/\/+$/, '') : 'http://localhost:5000';
+    axios.defaults.baseURL = `${apiUrl}/api`;
     
     // Add Token Interceptor
     axios.interceptors.request.use((config) => {
