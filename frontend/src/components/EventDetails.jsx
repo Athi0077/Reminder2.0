@@ -265,6 +265,30 @@ const EventDetails = ({ event, onClose, onUpdate }) => {
     }
   };
 
+  const handleLeaveTeam = async () => {
+    if (!window.confirm('Are you sure you want to leave this team?')) return;
+    try {
+      await axios.delete(`/reminders/${event._id}/members/${user.id}`);
+      toast.success('You left the team');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to leave team');
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!window.confirm('Delete this team reminder? This will remove it for all members.')) return;
+    try {
+      await axios.delete(`/reminders/${event._id}`);
+      toast.success('Reminder deleted');
+      onUpdate();
+      onClose();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to delete reminder');
+    }
+  };
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High': return 'bg-red-50 text-red-600 border-red-200';
@@ -302,9 +326,27 @@ const EventDetails = ({ event, onClose, onUpdate }) => {
             </div>
             <h2 className="text-xl font-bold text-slate-900 line-clamp-1">{event.title}</h2>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
-            <X size={24} />
-          </button>
+          <div className="flex items-center gap-2">
+            {!isOwner && event.type === 'team' && (
+              <button 
+                onClick={handleLeaveTeam} 
+                className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
+              >
+                Leave
+              </button>
+            )}
+            {isOwner && event.type === 'team' && (
+              <button 
+                onClick={handleDeleteEvent} 
+                className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors border border-red-100 flex items-center gap-1.5"
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            )}
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+              <X size={24} />
+            </button>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
