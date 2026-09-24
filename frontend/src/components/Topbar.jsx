@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from 'react';
-import { Bell, Menu, Check } from 'lucide-react';
+import { Bell, Menu, Check, LogOut } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import { SocketContext } from '../context/SocketContext';
 import axios from 'axios';
@@ -9,7 +9,7 @@ const Topbar = ({ setIsOpen }) => {
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifications, setNotifications] = useState([]);
   
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const { socket } = useContext(SocketContext);
 
   useEffect(() => {
@@ -145,12 +145,22 @@ const Topbar = ({ setIsOpen }) => {
         {user && (
           <div className="hidden md:flex items-center gap-3 pl-4 border-l border-slate-200">
             <div className="text-right">
-              <p className="text-sm font-bold text-slate-800 leading-tight">{user.name}</p>
+              <p className="text-sm font-bold text-slate-800 leading-tight capitalize">{user.name}</p>
               <p className="text-xs text-slate-500 leading-tight">{user.email}</p>
             </div>
-            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold">
+            <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold uppercase">
               {user.name.charAt(0)}
             </div>
+            <button 
+              onClick={() => {
+                logout();
+                window.location.href = '/login';
+              }}
+              className="ml-2 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+              title="Logout"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         )}
       </div>
