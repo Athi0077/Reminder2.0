@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { updateNativeAlarms } from '../services/nativeAlarm';
 
 export const AuthContext = createContext();
 
@@ -44,6 +45,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const res = await axios.get('/auth/me');
         setUser(res.data);
+        axios.get('/reminders').then(r => updateNativeAlarms(r.data)).catch(console.error);
       } catch (err) {
         console.error(err);
         localStorage.removeItem('token');
@@ -56,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     const res = await axios.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
     setUser(res.data);
+    axios.get('/reminders').then(r => updateNativeAlarms(r.data)).catch(console.error);
     return res.data;
   };
 

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import ReminderCalendar from '../components/ReminderCalendar';
 import EventDetails from '../components/EventDetails';
 import { QRCodeCanvas } from 'qrcode.react';
+import { scheduleNativeAlarm, cancelNativeAlarm, updateNativeAlarms } from '../services/nativeAlarm';
 
 const Reminders = () => {
   const [reminders, setReminders] = useState([]);
@@ -34,12 +35,19 @@ const Reminders = () => {
     if (socket) {
       socket.on('reminder_shared', (newReminder) => {
         setReminders(prev => [...prev, newReminder].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime)));
+        scheduleNativeAlarm(newReminder);
       });
       socket.on('reminder_updated', (updatedReminder) => {
         setReminders(prev => prev.map(r => r._id === updatedReminder._id ? updatedReminder : r).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime)));
+        if (updatedReminder.isCompleted) {
+          cancelNativeAlarm(updatedReminder._id);
+        } else {
+          scheduleNativeAlarm(updatedReminder);
+        }
       });
       socket.on('reminder_deleted', ({ id }) => {
         setReminders(prev => prev.filter(r => r._id !== id));
+        cancelNativeAlarm(id);
       });
     }
     return () => {
@@ -55,6 +63,7 @@ const Reminders = () => {
     try {
       const res = await axios.get('/reminders');
       setReminders(res.data);
+      updateNativeAlarms(res.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -80,8 +89,16 @@ const Reminders = () => {
       if (res.data.spawnedReminder) {
         updatedReminders.push(res.data.spawnedReminder);
         toast.success(`Next occurrence scheduled for ${new Date(res.data.spawnedReminder.dateTime).toLocaleDateString()}`);
+        scheduleNativeAlarm(res.data.spawnedReminder);
       }
       
+      const updated = res.data.updatedReminder || res.data;
+      if (updated.isCompleted) {
+        cancelNativeAlarm(id);
+      } else {
+        scheduleNativeAlarm(updated);
+      }
+
       setReminders(updatedReminders);
     } catch (err) {
       console.error(err);
@@ -94,6 +111,7 @@ const Reminders = () => {
     try {
       await axios.delete(`/reminders/${id}`);
       setReminders(reminders.filter(r => r._id !== id));
+      cancelNativeAlarm(id);
     } catch (err) {
       console.error(err);
       alert('Failed to delete. You might not be the owner.');
@@ -109,9 +127,11 @@ const Reminders = () => {
       if (editMode && editId) {
         const res = await axios.put(`/reminders/${editId}`, payload);
         setReminders(prev => prev.map(r => r._id === editId ? res.data : r).sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime)));
+        scheduleNativeAlarm(res.data);
       } else {
         const res = await axios.post('/reminders', payload);
         setReminders([...reminders, res.data].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime)));
+        scheduleNativeAlarm(res.data);
       }
       setShowModal(false);
       setEditMode(false);
